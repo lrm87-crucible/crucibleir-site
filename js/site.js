@@ -21,15 +21,52 @@ if(calc){
   });
   upd();
 }
+// Pilot request form.
+// Posts to a hosted form endpoint so a submission reaches the inbox without
+// depending on the visitor having a mail client configured — the old mailto:
+// handoff silently did nothing on a corporate desktop using webmail, which
+// meant a lost lead nobody ever knew about.
 var form=$('leadform');
 if(form){
+  var endpoint=form.getAttribute('data-endpoint')||'';
+  var to=form.getAttribute('data-to')||'lawrence@crucibleir.com';
+  var btn=form.querySelector('button[type=submit]');
+  var note=$('leadnote');
+
+  var showNote=function(cls,html){
+    if(!note)return;
+    note.className=cls;
+    note.innerHTML=html;
+    note.hidden=false;
+  };
+
+  // If anything goes wrong, never leave the visitor with a dead end: show the
+  // address so they can still reach us.
+  var failed=function(){
+    showNote('err','We couldn&rsquo;t send that automatically. Please email <a href="mailto:'+to+'">'+to+'</a> and we&rsquo;ll pick it up from there.');
+  };
+
   form.addEventListener('submit',function(e){
     e.preventDefault();
-    var f=new FormData(form), g=function(k){return (f.get(k)||'').toString().trim()};
-    var body='Name: '+g('name')+'\nEmail: '+g('email')+'\nCompany: '+g('company')+'\nRole: '+g('role')+'\nSites with idle assets: '+g('sites')+'\n\nHow we track idle assets today:\n'+g('notes');
-    var to=form.getAttribute('data-to')||'lawrence@crucibleir.com';
-    window.location.href='mailto:'+to+'?subject='+encodeURIComponent('Pilot request from '+g('company'))+'&body='+encodeURIComponent(body);
-    $('leadok').hidden=false;
+    if(!endpoint){failed();return}
+
+    var data=new FormData(form);
+    data.append('_subject','Pilot request from '+((data.get('company')||'').toString().trim()||'a visitor'));
+
+    if(btn){btn.disabled=true;btn.textContent='Sending…'}
+    if(note)note.hidden=true;
+
+    fetch(endpoint,{method:'POST',body:data,headers:{Accept:'application/json'}})
+      .then(function(r){
+        if(!r.ok)throw new Error('bad status');
+        form.reset();
+        if($('leadok'))$('leadok').hidden=false;
+        if(btn){btn.hidden=true}
+      })
+      .catch(function(){
+        failed();
+        if(btn){btn.disabled=false;btn.textContent='Request a pilot'}
+      });
   });
 }
 document.addEventListener('click',function(e){

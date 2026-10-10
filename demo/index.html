@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactive demo | Crucible Investment Recovery</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2316262B'/%3E%3Cpath d='M12 24C13 42 21 53 32 53C43 53 51 42 52 24Z' fill='%23E9ECEA'/%3E%3Crect x='12' y='24' width='40' height='9' fill='%23E0A800'/%3E%3Crect x='8' y='20' width='48' height='5' fill='%23E9ECEA'/%3E%3Crect x='22' y='10' width='5' height='5' fill='%23E0A800'/%3E%3Crect x='33' y='6' width='6' height='6' fill='%23E0A800'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="../css/fonts.css">
+<style>
+:root{
+  --ink:#16262B; --steel:#1D3036; --steel-2:#284148; --paper:#E9ECEA; --panel:#F7F8F6; --line:#C9D0CD; --muted:#5B6B6F;
+  --idle:#E0A800; --redeploy:#C2571A; --evaluated:#2F6FA8; --listed:#2E7D4F; --offer:#7A4B9C; --closed:#6B7477; --alert:#B3382C;
+  --display:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  --body:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 var(--body);color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--evaluated);outline-offset:2px}
+.muted{color:var(--muted)}
+.st-idle{--c:var(--idle)}.st-evaluated{--c:var(--evaluated)}.st-listed{--c:var(--listed)}.st-offer{--c:var(--offer)}.st-closed{--c:var(--closed)}.st-redeploy{--c:var(--redeploy)}
+
+.app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+#side{background:var(--steel);color:#DDE5E3;padding:20px 16px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:22px}
+#side :focus-visible{outline-color:var(--idle)}
+.brand{display:flex;align-items:center;gap:12px;color:#fff}
+.brand .logo{width:38px;flex:none}
+.brand b{display:block;font:700 27px/1 var(--display);letter-spacing:.01em}
+.brand small{display:block;font-size:12.5px;color:#9FB2B5;margin-top:3px;letter-spacing:.04em}
+.ws span,.role>span{display:block;font-size:12.5px;color:#9FB2B5;margin-bottom:6px}
+.ws select{width:100%;background:var(--steel-2);color:#fff;border:1px solid #3B555C;padding:9px 10px;border-radius:4px}
+nav{display:flex;flex-direction:column;gap:2px}
+nav button{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:0;color:#C9D6D4;padding:9px 12px;text-align:left;font-weight:500;border-left:3px solid transparent;border-radius:0 4px 4px 0;cursor:pointer}
+nav button:hover{background:#243A41}
+nav button.on{background:var(--steel-2);color:#fff;border-left-color:var(--idle)}
+nav em{font-style:normal;font-size:13px;color:#9FB2B5}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid #3B555C;border-radius:4px;overflow:hidden}
+.seg button{background:none;border:0;color:#C9D6D4;padding:8px 4px;font-size:13px;cursor:pointer}
+.seg button.on{background:var(--paper);color:var(--ink);font-weight:600}
+.role p{font-size:12.5px;color:#9FB2B5;margin:8px 0 0}
+.foot{margin:auto 0 0;font-size:12.5px;color:#8DA1A4}
+
+main{padding:28px 32px 70px;min-width:0;max-width:1320px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+h1{font:600 40px/1 var(--display);letter-spacing:.01em;margin:0 0 6px}
+.head p{margin:0;color:var(--muted)}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{padding:9px 15px;border:1.5px solid var(--ink);background:transparent;font-weight:600;font-size:14px;border-radius:4px;cursor:pointer}
+.btn:hover{background:#DDE3E0}
+.btn.primary{background:var(--ink);color:#fff}
+.btn.primary:hover{background:#0C1A1E}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px 20px}
+.panel h2{font:600 23px/1.1 var(--display);margin:0 0 4px}
+.panel .hint{margin:0 0 14px;color:var(--muted);font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:20px}
+.stat{background:var(--panel);padding:16px 18px}
+.stat span{font-size:13.5px;color:var(--muted)}
+.stat b{display:block;font:600 44px/1.05 var(--display);margin:2px 0}
+.stat small{color:var(--muted);font-size:13px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start}
+.stack{display:grid;gap:20px}
+
+.age-row{display:grid;grid-template-columns:120px 1fr 92px;gap:14px;align-items:center;padding:11px 0;border-top:1px solid var(--line)}
+.age-row:first-of-type{border-top:0}
+.lnk{background:none;border:0;padding:0;text-align:left;font-weight:600;cursor:pointer;text-decoration:underline dotted;text-underline-offset:4px}
+.sqs{display:flex;flex-wrap:wrap;gap:5px}
+.sq{width:24px;height:24px;border:0;border-radius:2px;background:var(--c);cursor:pointer}
+.sq:hover{outline:2px solid var(--ink);outline-offset:1px}
+.agecount{text-align:right}
+.agecount b{display:block;font:600 22px/1 var(--display)}
+.agecount small{color:var(--muted);font-size:12.5px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;background:var(--c);margin-right:6px;vertical-align:-1px}
+
+.plate{position:relative;display:inline-flex;align-items:center;font:600 15px/1.2 var(--display);letter-spacing:.05em;padding:2px 11px;border:1.5px solid var(--ink);border-radius:2px;background:#fff;white-space:nowrap}
+.plate::before,.plate::after{content:'';position:absolute;top:50%;width:3px;height:3px;border-radius:50%;background:var(--muted);transform:translateY(-50%)}
+.plate::before{left:3px}.plate::after{right:3px}
+.plate.lg{font-size:24px;padding:3px 14px}
+.pill{display:inline-flex;align-items:center;gap:7px;font-weight:600;font-size:13.5px;white-space:nowrap}
+.pill::before{content:'';width:10px;height:10px;border-radius:50%;background:var(--c)}
+
+.item{display:flex;width:100%;gap:12px;align-items:flex-start;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:12px 0;cursor:pointer}
+.item:first-of-type{border-top:0}
+.item:hover .t{text-decoration:underline}
+.item .t{font-weight:600}
+.item .m{font-size:13.5px;color:var(--muted)}
+.rrow{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:12px 0;cursor:pointer}
+.rrow:first-of-type{border-top:0}
+.rrow .rn{margin-left:10px;font-weight:600}
+.bar{height:8px;background:#DDE2DF;border-radius:2px;margin:9px 0 5px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--listed)}
+.rl{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);gap:10px}
+.empty{padding:26px 8px;text-align:center;color:var(--muted)}
+
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.filters input,.filters select,.modal input,.modal select,.mini input{padding:9px 11px;border:1px solid var(--line);background:#fff;border-radius:4px}
+.filters input[type=search]{min-width:250px}
+.chip{background:var(--ink);color:#fff;border:0;border-radius:99px;padding:6px 12px;font-size:13px;cursor:pointer}
+.tablewrap{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th{text-align:left;font-weight:600;font-size:13px;color:var(--muted);padding:11px 14px;border-bottom:1.5px solid var(--ink);white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tr.click{cursor:pointer}
+tr.click:hover{background:#EDF0EE}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td strong{display:block;font-weight:600}
+td small{color:var(--muted);font-size:13px}
+.idle-hot{color:var(--alert);font-weight:600}
+
+.board{display:grid;grid-template-columns:repeat(6,minmax(216px,1fr));gap:14px;overflow-x:auto;padding-bottom:10px}
+.col{background:#DFE4E1;border-top:4px solid var(--c);border-radius:0 0 6px 6px;padding:10px}
+.col h3{display:flex;justify-content:space-between;align-items:baseline;font:600 21px/1 var(--display);margin:4px 4px 2px}
+.col .sum{font-size:13px;color:var(--muted);margin:0 4px 10px}
+.kc{display:block;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:11px 12px;margin-bottom:8px;cursor:pointer}
+.kc:hover{border-color:var(--ink)}
+.kc .n{font-weight:600;font-size:14.5px;margin:9px 0 3px;line-height:1.3}
+.kc .s{font-size:13px;color:var(--muted)}
+.kc .b{display:flex;justify-content:space-between;margin-top:9px;font-size:13.5px;font-weight:600}
+
+.scrim{position:fixed;inset:0;background:rgba(22,38,43,.45);z-index:30}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(540px,100%);background:var(--panel);z-index:31;overflow:auto;box-shadow:-10px 0 34px rgba(0,0,0,.2)}
+.drawer.anim{animation:slide .18s ease-out}
+@keyframes slide{from{transform:translateX(30px);opacity:.4}to{transform:none;opacity:1}}
+.dh{padding:22px 24px 16px;border-bottom:1px solid var(--line)}
+.dh .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.x{background:none;border:0;font-size:26px;line-height:1;cursor:pointer;padding:0 6px;color:var(--muted)}
+.dh h2{font:600 27px/1.15 var(--display);margin:0 0 4px}
+.dh p{margin:0;color:var(--muted);font-size:14px}
+ol.steps{list-style:none;display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:18px 0 0;padding:0}
+ol.steps li{border-top:5px solid #D3D9D6;padding-top:6px;font-size:11.5px;line-height:1.25;color:var(--muted)}
+ol.steps li.done{border-top-color:var(--ink)}
+ol.steps li.now{border-top-color:var(--c);color:var(--ink);font-weight:600}
+.dact{padding:14px 24px;display:flex;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:2px;padding:0 16px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:12px 12px 10px;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--ink)}
+.dbody{padding:20px 24px 40px}
+dl.facts{display:grid;grid-template-columns:1fr 1fr;gap:16px 20px;margin:0 0 18px}
+dl.facts dt{font-size:13px;color:var(--muted)}
+dl.facts dd{margin:1px 0 0;font-weight:600}
+.note{padding:11px 13px;border-left:4px solid;border-radius:0 4px 4px 0;font-size:14px;margin:0 0 14px}
+.note.warn{border-color:var(--alert);background:#F5E3E0}
+.note.ok{border-color:var(--listed);background:#E0EEE5}
+.note.info{border-color:var(--evaluated);background:#E1EAF3}
+.check{display:flex;gap:12px;align-items:center;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.check input{width:19px;height:19px;accent-color:var(--ink)}
+ul.tl{list-style:none;margin:0;padding:0}
+ul.tl li{border-left:2px solid var(--line);padding:0 0 16px 16px;margin-left:4px;position:relative}
+ul.tl li::before{content:'';position:absolute;left:-6px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--ink)}
+ul.tl small{display:block;color:var(--muted)}
+.mini{display:grid;grid-template-columns:1fr 130px auto;gap:8px;margin-top:16px}
+.mini input{min-width:0}
+.tagt{font-weight:600;font-size:13.5px}
+.tagt.Offer{color:var(--offer)}.tagt.New{color:var(--evaluated)}.tagt.Quoted{color:#8A6A00}.tagt.Declined{color:var(--muted)}.tagt.Pending{color:var(--redeploy)}.tagt.Approved{color:var(--listed)}
+
+.winbar{height:8px;background:rgba(22,38,43,.14);border-radius:2px;overflow:hidden;margin:10px 0 2px}
+.winbar i{display:block;height:100%;background:var(--redeploy)}
+.reqcard{border:1px solid var(--line);border-radius:4px;padding:13px 15px;margin-bottom:10px;background:#fff}
+.reqcard .rh{display:flex;justify-content:space-between;gap:10px;font-weight:600}
+.reqcard .rm{color:var(--muted);font-size:13.5px;margin:3px 0 8px}
+.reqcard .ra{display:flex;gap:8px;flex-wrap:wrap}
+.btn.sm{padding:6px 12px;font-size:13px}
+.sec{margin:0 0 26px}
+.sec h2{font:600 24px/1.1 var(--display);margin:0 0 4px}
+.sec>p{margin:0 0 12px;color:var(--muted);font-size:14px}
+.banner{background:var(--ink);color:#fff;border-radius:6px;padding:22px 26px;display:flex;justify-content:space-between;gap:22px;align-items:center;flex-wrap:wrap;margin-bottom:20px;border-left:8px solid var(--idle)}
+.banner :focus-visible{outline-color:var(--idle)}
+.banner h2{font:600 28px/1.1 var(--display);margin:0 0 6px}
+.banner p{margin:0;color:#C9D6D4;max-width:56ch}
+.banner .kpis{display:flex;gap:28px;margin-top:14px;flex-wrap:wrap}
+.banner .kpis b{display:block;font:600 36px/1 var(--display)}
+.banner .kpis span{font-size:13px;color:#9FB2B5}
+.bactions{display:flex;gap:10px;flex-wrap:wrap}
+.btn.yel{background:var(--idle);border-color:var(--idle);color:var(--ink)}
+.btn.yel:hover{background:#F0B800}
+.btn.ghostl{border-color:#9FB2B5;color:#fff}
+.btn.ghostl:hover{background:rgba(255,255,255,.1)}
+.stats.s4{grid-template-columns:repeat(4,1fr)}
+.ap-delivered{color:var(--listed)}.ap-inprogress{color:var(--evaluated)}.ap-requested{color:var(--redeploy)}
+.lad{margin-bottom:15px}
+.lad .lh{display:flex;justify-content:space-between;font-weight:600}
+.lad .bar{height:10px;margin:6px 0 3px}
+.lad .rm{margin:0}
+.dprow{display:grid;grid-template-columns:minmax(150px,1.3fr) 2fr minmax(120px,.8fr);gap:16px;align-items:center;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:14px 0;cursor:pointer}
+.dprow:first-of-type{border-top:0}
+.dprow:hover .dn{text-decoration:underline}
+.dprow .dn{font-size:13.5px;color:var(--muted);margin-top:4px}
+.dp{position:relative;height:22px}
+.dp::before{content:'';position:absolute;left:2%;right:2%;top:10px;height:2px;background:var(--line)}
+.dp i{position:absolute;top:3px;width:16px;height:16px;border-radius:50%;transform:translateX(-50%);border:2px solid var(--panel)}
+.dv{font-weight:600}
+.dv small{display:block;color:var(--muted);font-weight:400;font-size:13px}
+.dleg{display:flex;gap:16px;flex-wrap:wrap;margin:0 0 6px;font-size:13px;color:var(--muted)}
+.dleg i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.defs{margin-top:14px;font-size:14px}
+.defs summary{cursor:pointer;font-weight:600}
+.defs dt{font-weight:600;margin-top:10px}
+.defs dd{margin:2px 0 0;color:var(--muted)}
+.rowbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.modalwrap{position:fixed;inset:0;background:rgba(22,38,43,.5);z-index:40;display:grid;place-items:center;padding:16px}
+.modal{background:var(--panel);width:min(560px,100%);max-height:92vh;overflow:auto;padding:24px;border-radius:6px}
+.modal h2{font:600 28px/1.1 var(--display);margin:0 0 6px}
+.modal>p{margin:0 0 16px;color:var(--muted)}
+.modal label{display:block;font-size:13.5px;font-weight:600;margin-bottom:12px}
+.modal label input,.modal label select{display:block;width:100%;margin-top:5px;font-weight:400}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.mfoot{display:flex;justify-content:flex-end;gap:10px;margin-top:8px}
+.err{color:var(--alert);font-size:13.5px;margin:0 0 10px;min-height:1em}
+.map td,.map th{padding:8px 10px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:4px;z-index:60;max-width:92vw;font-size:14px}
+#toast.bad{background:var(--alert)}
+
+@media (max-width:1200px){.stats{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:1000px){.grid2{grid-template-columns:1fr}}
+@media (max-width:640px){.stats,.stats.s4{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  #side{position:static;height:auto;gap:14px;padding:14px 16px}
+  nav{flex-direction:row;overflow-x:auto}
+  nav button{width:auto;white-space:nowrap;border-left:0;border-bottom:3px solid transparent;border-radius:4px 4px 0 0;gap:8px}
+  nav button.on{border-bottom-color:var(--idle)}
+  .foot{display:none}
+  main{padding:20px 16px 60px}
+  h1{font-size:34px}
+  .age-row{grid-template-columns:1fr 84px}
+  .age-row .sqs{grid-column:1/-1;order:3}
+  .hide-sm{display:none}
+  .dprow{grid-template-columns:1fr;gap:8px}
+  .mini{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="side"></aside>
+  <main id="main"></main>
+</div>
+<div id="drawer"></div>
+<div id="modal"></div>
+<div id="toast" hidden></div>
+
+<script>
+const APPR_ON=false; // set to false to hide the appraisal features
+/* ---------- Sample data (two fictional clients, kept fully separate) ---------- */
+function mk(id,name,cat,make,model,year,site,unit,installed,status,book,est,hold,idle,owner,checks,x){
+  x=x||{};
+  return {id,name,cat,make,model,year,site,unit,installed,status,book,est,hold,idle,owner,checks,
+    notes:x.notes||'',inq:x.inq||[],closed:x.closed||null,req:x.req||[],win:x.win||null,appr:x.appr||null,
+    log:(x.log||[]).concat(APPR_ON?(x.alog||[]):[],[{d:idle,who:owner,text:'Declared idle'}])};
+}
+const CORP='S. Whitfield (Corporate)', PLANT='J. Bennett (Plant)';
+const TENANTS={
+  bayou:{
+    name:'Anchor Polymers',
+    labels:{idle:'Idle',evaluated:'Evaluated',redeploy:'Redeploy window',listed:'Listed',offer:'Under offer',closed:'Closed'},
+    cats:['Reactors & vessels','Heat exchangers','Pumps','Compressors','Columns & towers','Tanks','Electrical & motors','Instrumentation'],
+    sites:['Millbrook Olefins','Northgate Aromatics','Crestview Specialty'],
+    checks:['Decontamination certified','Hazmat documentation','Title & lien check','Permit release'],
+    imports:[['IMP-101','Shell & tube exchanger, carbon steel',1,1,64000,21000,150],['IMP-102','Centrifugal pump, 100 HP',2,0,18000,7000,90],['IMP-103','Vertical storage tank, 20,000 gal',5,2,72000,19000,320]],
+    assets:[
+      mk('R-4101','Glass-lined reactor, 6,000 gal','Reactors & vessels','Pfaudler','RA-6000',2004,'Crestview Specialty','Unit 4',false,'listed',410000,185000,14000,212,'M. Coleman',[true,true,true,true],{notes:'Removed and staged in Warehouse B. Agitator and baffle included.',inq:[{buyer:'Andina Process Group',amt:0,st:'New',d:6},{buyer:'Delta Industrial Resale',amt:142000,st:'Offer',d:19}],log:[{d:31,who:CORP,text:'Listed for sale'}],appr:{status:'delivered',purpose:'Sale preparation',scope:'Field inspection',rush:false,appraiser:'Meridian Industrial Valuation',d:250,dd:225,fmv:240000,olv:185000,flv:120000,report:'R-4101_appraisal.pdf'},alog:[{d:225,who:'Meridian Industrial Valuation',text:'Appraisal delivered'}]}),
+      mk('HX-2210','Shell & tube exchanger, 316L, 4,200 sq ft','Heat exchangers','Ohmstede','BEM 4200',1998,'Millbrook Olefins','Unit 2',true,'idle',120000,45000,6000,540,'D. Foster',[false,false,false,false],{notes:'Still installed. Bundle pulled in 2023 for inspection.',appr:{status:'requested',purpose:'Impairment testing',scope:'Desktop review',rush:false,appraiser:null,d:2},alog:[{d:2,who:'D. Foster',text:'Appraisal requested: Impairment testing, desktop review'}]}),
+      mk('K-3305','Centrifugal compressor, 3,000 HP','Compressors','Elliott','2MB 3000',2001,'Northgate Aromatics','Unit 3',true,'evaluated',1850000,620000,48000,402,'R. Palmer',[true,true,false,false],{notes:'Includes lube oil console and driver. Vibration history attached.',log:[{d:58,who:CORP,text:'Evaluation completed'}],appr:{status:'delivered',purpose:'Impairment testing',scope:'Field inspection',rush:false,appraiser:'Gulf States Appraisal Group',d:96,dd:70,fmv:780000,olv:620000,flv:410000,report:'K-3305_appraisal.pdf'},alog:[{d:70,who:'Gulf States Appraisal Group',text:'Appraisal delivered'}]}),
+      mk('P-1187','Centrifugal pump, ANSI, 200 HP','Pumps','Goulds','3196 i-Frame',2011,'Millbrook Olefins','Unit 1',false,'offer',38000,16000,900,140,'D. Foster',[true,true,true,true],{inq:[{buyer:'Delta Industrial Resale',amt:14500,st:'Offer',d:9},{buyer:'Marlow Pump & Supply',amt:12000,st:'Declined',d:20}]}),
+      mk('P-1201','Centrifugal pump, ANSI, 200 HP','Pumps','Goulds','3196 i-Frame',2012,'Millbrook Olefins','Unit 1',false,'redeploy',38000,16000,900,95,'D. Foster',[true,true,false,false],{win:{days:30,elapsed:9},req:[{site:'Crestview Specialty',by:'M. Coleman',need:'Spare for Unit 4 feed service',avoid:40000,st:'Pending',d:4}],log:[{d:9,who:CORP,text:'Opened redeployment window'}]}),
+      mk('T-9002','Storage tank, 50,000 gal, stainless','Tanks','Matrix Service','Vertical',1996,'Crestview Specialty','Tank farm',true,'idle',210000,60000,9500,880,'M. Coleman',[false,true,false,true]),
+      mk('C-5501','Distillation column, 8 ft × 110 ft, 62 trays','Columns & towers','Koch-Glitsch','Trayed',1994,'Northgate Aromatics','Unit 5',true,'idle',2400000,540000,72000,1210,'R. Palmer',[false,false,false,false],{notes:'Largest holding cost in the portfolio. Demolition scheduled only if no buyer by Q2.',appr:{status:'inprogress',purpose:'Sale preparation',scope:'Field inspection',rush:false,appraiser:'Meridian Industrial Valuation',d:9,due:12},alog:[{d:9,who:'M. Coleman',text:'Appraisal requested: Sale preparation, field inspection'}]}),
+      mk('M-7720','Motor, 1,500 HP, 4 kV','Electrical & motors','Siemens','1LA8',2008,'Millbrook Olefins','Unit 2',false,'listed',95000,42000,1200,260,'D. Foster',[true,true,true,true],{inq:[{buyer:'Kessler Reman',amt:0,st:'Quoted',d:11}]}),
+      mk('FT-6120','Coriolis flow meters (set of 12)','Instrumentation','Emerson','Micro Motion',2015,'Crestview Specialty','Unit 4',false,'redeploy',60000,22000,400,95,'M. Coleman',[true,true,true,false],{win:{days:30,elapsed:12},req:[{site:'Millbrook Olefins',by:'D. Foster',need:'Replace failed meters ahead of the Unit 6 restart',avoid:34000,st:'Pending',d:3}],log:[{d:12,who:CORP,text:'Opened redeployment window'}]}),
+      mk('E-2901','Air-cooled exchanger, 4 fans','Heat exchangers','Hudson Products','Fin-fan',2003,'Northgate Aromatics','Unit 3',true,'idle',175000,52000,7000,75,'R. Palmer',[false,false,false,false]),
+      mk('K-3310','Reciprocating compressor, 800 HP','Compressors','Ariel','JGT/4',2006,'Northgate Aromatics','Unit 3',false,'offer',520000,210000,15000,330,'R. Palmer',[true,true,true,true],{inq:[{buyer:'Cascade Compression Services',amt:185000,st:'Offer',d:14}]}),
+      mk('V-4110','Pressure vessel, 12 ft × 40 ft, ASME VIII','Reactors & vessels','Custom','ASME VIII',1999,'Millbrook Olefins','Unit 2',true,'redeploy',140000,38000,5000,610,'D. Foster',[true,false,true,false],{win:{days:30,elapsed:34},log:[{d:34,who:CORP,text:'Opened redeployment window'}]}),
+      mk('R-4102','Stainless jacketed reactor, 3,000 gal','Reactors & vessels','De Dietrich','SS 3000',2007,'Crestview Specialty','Unit 4',false,'closed',220000,130000,8000,310,'M. Coleman',[true,true,true,true],{closed:{outcome:'Sold',proceeds:118000},log:[{d:40,who:CORP,text:'Closed: Sold for $118,000'}]}),
+      mk('P-1190','Metering pump skid','Pumps','Milton Roy','Skid',2016,'Millbrook Olefins','Unit 1',false,'closed',26000,14000,600,180,'D. Foster',[true,true,true,true],{closed:{outcome:'Redeployed',proceeds:0,avoided:31000,to:'Northgate Aromatics'},req:[{site:'Northgate Aromatics',by:'R. Palmer',need:'Feed skid for the Unit 3 debottleneck',avoid:31000,st:'Approved',d:26}],log:[{d:22,who:CORP,text:'Approved transfer to Northgate Aromatics, avoiding a $31,000 purchase'}]}),
+      mk('T-9010','Carbon steel day tanks (3)','Tanks','Custom','Horizontal',1992,'Crestview Specialty','Tank farm',false,'closed',30000,9000,1500,690,'M. Coleman',[true,true,true,true],{closed:{outcome:'Scrapped',proceeds:8200},log:[{d:65,who:CORP,text:'Closed: Scrapped for $8,200'}]})
+    ]
+  },
+  ridge:{
+    name:'Ridgeline Materials',
+    labels:{idle:'Surplus declared',evaluated:'Under review',redeploy:'Internal offer',listed:'Marketed',offer:'Negotiating',closed:'Disposed'},
+    cats:['Extruders','Mixers & blenders','Dryers','Packaging lines','Utilities & boilers','Storage'],
+    sites:['Rock Hill Works','Tulsa Compounding'],
+    checks:['Environmental sign-off','Title check','Engineering release'],
+    imports:[['IMP-201','Pelletizer, underwater',0,1,240000,90000,200],['IMP-202','Batch mixer, 500 L',1,0,55000,18000,120],['IMP-203','Air compressor, 200 HP',4,0,48000,17000,260]],
+    assets:[
+      mk('EX-100','Twin-screw extruder, 92 mm','Extruders','Coperion','ZSK 92',2009,'Tulsa Compounding','Line 1',true,'idle',780000,310000,22000,190,'A. Nguyen',[false,true,false],{appr:{status:'delivered',purpose:'Lending',scope:'Field inspection',rush:false,appraiser:'Piedmont Machinery Appraisers',d:80,dd:60,fmv:420000,olv:310000,flv:205000,report:'EX-100_appraisal.pdf'},alog:[{d:60,who:'Piedmont Machinery Appraisers',text:'Appraisal delivered'}]}),
+      mk('EX-104','Single-screw extruder, 6 in','Extruders','Davis-Standard','DS-150',2002,'Tulsa Compounding','Line 4',false,'listed',210000,60000,4000,420,'A. Nguyen',[true,true,true],{inq:[{buyer:'Northstar Compounders',amt:0,st:'New',d:4}]}),
+      mk('MX-210','Ribbon blender, 200 cu ft','Mixers & blenders','Munson','RB-200',2010,'Rock Hill Works','Blend',true,'redeploy',85000,30000,3000,150,'T. Ellis',[true,false,false],{win:{days:30,elapsed:20},req:[{site:'Tulsa Compounding',by:'A. Nguyen',need:'Adds blending capacity for the Line 2 expansion',avoid:62000,st:'Pending',d:6}],log:[{d:20,who:CORP,text:'Opened redeployment window'}]}),
+      mk('DR-330','Rotary dryer, 8 ft × 40 ft','Dryers','Louisville Dryer','RD-840',1997,'Rock Hill Works','Dry house',true,'idle',310000,78000,11000,730,'T. Ellis',[false,false,false],{appr:{status:'inprogress',purpose:'Insurance',scope:'Desktop review',rush:true,appraiser:'Piedmont Machinery Appraisers',d:4,due:3},alog:[{d:4,who:'T. Ellis',text:'Appraisal requested: Insurance, desktop review, rush'}]}),
+      mk('BL-501','Firetube boiler, 600 HP','Utilities & boilers','Cleaver-Brooks','CB-600',2005,'Rock Hill Works','Utilities',false,'offer',140000,64000,2500,260,'T. Ellis',[true,true,true],{inq:[{buyer:'Heartland Boiler Exchange',amt:58000,st:'Offer',d:8}]}),
+      mk('PK-620','Bagging line, 25 kg','Packaging lines','Premier Tech','Auto 25',2014,'Tulsa Compounding','Pack-out',true,'idle',260000,120000,8000,45,'A. Nguyen',[false,false,false]),
+      mk('ST-701','Carbon steel silo, 3,000 cu ft','Storage','Custom','Vertical',2000,'Rock Hill Works','Yard',false,'closed',48000,22000,1200,300,'T. Ellis',[true,true,true],{closed:{outcome:'Sold',proceeds:22000},log:[{d:35,who:CORP,text:'Closed: Sold for $22,000'}]})
+    ]
+  }
+};
+
+/* ---------- State & helpers ---------- */
+const ORDER=['idle','evaluated','redeploy','listed','offer','closed'];
+const BUCKETS=[['Under 3 months',0,90],['3–6 months',91,180],['6–12 months',181,365],['1–2 years',366,730],['Over 2 years',731,1e9]];
+const state={tenant:'bayou',role:'corp',view:'dash',drawer:null,f:{q:'',status:'all',site:'all',cat:'all',sort:'idle',age:-1}};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const T=()=>TENANTS[state.tenant], assets=()=>T().assets, lbl=s=>T().labels[s];
+const byId=id=>assets().find(a=>a.id===id);
+const sum=(l,k)=>l.reduce((s,a)=>s+a[k],0);
+const money=n=>'$'+Math.round(n).toLocaleString('en-US');
+const short=n=>n>=1e6?'$'+(n/1e6).toFixed(n>=1e7?0:2).replace(/\.?0+$/,'')+'M':n>=1e3?'$'+Math.round(n/1e3)+'K':'$'+Math.round(n);
+const fmtDays=d=>d<60?d+' days':d<730?Math.round(d/30)+' months':(d/365).toFixed(1)+' years';
+const openChecks=a=>T().checks.filter((c,i)=>!a.checks[i]);
+const who=()=>state.role==='corp'?CORP:PLANT;
+const log=(a,text)=>a.log.unshift({d:0,who:who(),text});
+const plate=(id,lg)=>`<span class="plate${lg?' lg':''}">${esc(id)}</span>`;
+const pill=s=>`<span class="pill st-${s}">${esc(lbl(s))}</span>`;
+const isRed=a=>a.status==='closed'&&a.closed.outcome==='Redeployed';
+const cv=a=>isRed(a)?`${money(a.closed.avoided||0)}<br><small>purchase avoided</small>`:`${money(a.closed.proceeds)}<br><small>recovered</small>`;
+const pendOf=a=>a.req.filter(r=>r.st==='Pending');
+const winLeft=a=>a.win?a.win.days-a.win.elapsed:null;
+const hasAppr=a=>!!a.appr&&a.appr.status==='delivered';
+const ago=d=>d===0?'today':d+' days ago';
+const estBasis=a=>hasAppr(a)&&a.est===a.appr.olv?'appraised':'client estimate';
+let toastTimer;
+function toast(msg,bad){const t=$('#toast');t.textContent=msg;t.className=bad?'bad':'';t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.hidden=true,3800)}
+
+/* ---------- Navigation ---------- */
+function go(v){state.view=v;state.drawer=null;render();window.scrollTo(0,0)}
+function switchTenant(k){state.tenant=k;state.drawer=null;state.f={q:'',status:'all',site:'all',cat:'all',sort:'idle',age:-1};render();toast(`Switched to ${T().name}. Each client only ever sees its own data.`)}
+function setRole(r){state.role=r;render()}
+function filterAge(i){state.f={q:'',status:'live',site:'all',cat:'all',sort:'idle',age:i};go('assets')}
+function openAsset(id,tab){state.drawer={id,tab:tab||'over',fresh:true};renderDrawer();const x=$('.drawer .x');if(x)x.focus()}
+function setTab(t){state.drawer.tab=t;renderDrawer()}
+function closeDrawer(){state.drawer=null;renderDrawer()}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if($('#modal').innerHTML)closeModal();else if(state.drawer)closeDrawer()}});
+
+/* ---------- Sidebar ---------- */
+function renderSide(){
+  const live=assets().filter(a=>a.status!=='closed').length;
+  const openInq=assets().reduce((n,a)=>n+a.inq.filter(q=>q.st!=='Declined').length,0);
+  const pendReq=assets().reduce((n,a)=>n+(a.status!=='closed'?pendOf(a).length:0),0);
+  const apOpen=assets().filter(a=>a.appr&&a.appr.status!=='delivered').length;
+  const nav=[['dash','Overview',''],['assets','Assets',live],['pipe','Pipeline',''],['appraisals','Appraisals',apOpen||''],['redeploy','Redeployment',pendReq||''],['inq','Inquiries',openInq]].filter(n=>APPR_ON||n[0]!=='appraisals');
+  $('#side').innerHTML=`
+    <div class="brand"><svg class="logo" viewBox="-2 -2 68 60" aria-hidden="true"><defs><clipPath id="sbc"><path d="M9 18C10 38 19 51 32 51C45 51 54 38 55 18Z"/></clipPath></defs><path d="M9 18C10 38 19 51 32 51C45 51 54 38 55 18Z" fill="#E9ECEA"/><rect y="18" width="64" height="10" fill="#E0A800" clip-path="url(#sbc)"/><rect x="5" y="13" width="54" height="6" rx="1" fill="#E9ECEA"/><rect x="23" y="51" width="18" height="4" rx="1" fill="#E9ECEA"/><rect x="21" y="5" width="4" height="4" fill="#E0A800"/><rect x="29" width="5" height="5" fill="#E0A800"/><rect x="38.5" y="4" width="3.5" height="3.5" fill="#E0A800"/></svg><div><b>Crucible</b><small>Investment Recovery</small></div></div>
+    <label class="ws"><span>Client workspace</span><select onchange="switchTenant(this.value)" aria-label="Client workspace">
+      ${Object.entries(TENANTS).map(([k,v])=>`<option value="${k}"${k===state.tenant?' selected':''}>${esc(v.name)}</option>`).join('')}</select></label>
+    <nav aria-label="Main">${nav.map(n=>`<button class="${state.view===n[0]?'on':''}" onclick="go('${n[0]}')">${n[1]}<em>${n[2]}</em></button>`).join('')}</nav>
+    <div class="role"><span>Viewing as</span><div class="seg">
+      <button class="${state.role==='plant'?'on':''}" onclick="setRole('plant')">Plant user</button>
+      <button class="${state.role==='corp'?'on':''}" onclick="setRole('corp')">Corporate</button></div>
+      <p>${state.role==='plant'?'Can add assets, update checklists and log inquiries. Stage moves need approval.':'Can approve stage moves and close out assets.'}</p></div>
+    <p class="foot">Interactive demo with sample data. Nothing is saved.<br><a href="../index.html" style="color:#E0A800">Back to the site</a> · <a href="../demo-request.html" style="color:#E0A800">Request a pilot</a></p>`;
+}
+
+/* ---------- Views ---------- */
+function renderMain(){
+  const v={dash:dashboard,assets:assetsView,pipe:pipeline,appraisals:appraisalsView,redeploy:redeployView,inq:inquiries}[state.view];
+  $('#main').innerHTML=v();
+}
+function head(title,sub,actions){
+  return `<div class="head"><div><h1>${title}</h1><p>${sub}</p></div><div class="actions">${actions===undefined?addBtn():actions}</div></div>`;
+}
+const addBtn=()=>`<button class="btn" onclick="importModal()">Import from CSV</button><button class="btn primary" onclick="addModal()">Add asset</button>`;
+
+function dashboard(){
+  const A=assets(), live=A.filter(a=>a.status!=='closed'), done=A.filter(a=>a.status==='closed');
+  const reds=done.filter(isRed), sold=done.filter(a=>!isRed(a));
+  const book=sum(live,'book'), est=sum(live,'est'), hold=sum(live,'hold');
+  const rec=sold.reduce((s,a)=>s+a.closed.proceeds,0), rb=sum(sold,'book');
+  const avoided=reds.reduce((s,a)=>s+(a.closed.avoided||0),0);
+  const pend=live.flatMap(pendOf), pendVal=sum(pend,'avoid');
+  const sites=new Set(live.map(a=>a.site)).size;
+  const stats=`<section class="stats" aria-label="Portfolio summary">
+    <div class="stat"><span>Idle assets</span><b>${live.length}</b><small>across ${sites} site${sites===1?'':'s'}</small></div>
+    <div class="stat"><span>Book value tied up</span><b>${short(book)}</b><small>on the balance sheet</small></div>
+    <div class="stat"><span>Estimated recovery</span><b>${short(est)}</b><small>${book?Math.round(est/book*100):0}% of book value</small></div>
+    <div class="stat"><span>Holding cost per year</span><b>${short(hold)}</b><small>insurance, taxes, upkeep</small></div>
+    <div class="stat"><span>Recovered from sales</span><b>${sold.length?short(rec):'—'}</b><small>${sold.length?Math.round(rec/rb*100)+'% of book on '+sold.length+' closed':'No closed sales yet'}</small></div>
+    <div class="stat"><span>Purchases avoided</span><b>${avoided?short(avoided):'—'}</b><small>${pend.length?short(pendVal)+' more in '+pend.length+' pending request'+(pend.length>1?'s':''):reds.length+' internal transfer'+(reds.length===1?'':'s')}</small></div></section>`;
+  const age=BUCKETS.map((b,i)=>{
+    const l=live.filter(a=>a.idle>=b[1]&&a.idle<=b[2]).sort((x,y)=>y.idle-x.idle);
+    return `<div class="age-row"><button class="lnk" onclick="filterAge(${i})">${b[0]}</button>
+      <div class="sqs">${l.length?l.map(a=>`<button class="sq st-${a.status}" onclick="openAsset('${a.id}')" title="${esc(a.id+' · '+a.name)}" aria-label="${esc(a.id+', '+a.name+', '+lbl(a.status))}"></button>`).join(''):'<span class="muted">None</span>'}</div>
+      <div class="agecount"><b>${l.length}</b><small>${short(sum(l,'book'))} book</small></div></div>`}).join('');
+  const legend=ORDER.slice(0,5).map(s=>`<span class="st-${s}"><i></i>${esc(lbl(s))}</span>`).join('');
+  const flags=[];
+  live.forEach(a=>{
+    const o=openChecks(a), pd=pendOf(a);
+    if(a.status==='redeploy'&&pd.length)flags.push({a,w:3,tab:'red',msg:`${pd.length} redeployment request${pd.length>1?'s':''} waiting for approval, ${short(sum(pd,'avoid'))} in purchases at stake`});
+    else if(a.status==='redeploy'&&winLeft(a)<=0)flags.push({a,w:2,tab:'red',msg:'Redeployment window ended with no requests. Ready to list.'});
+    else if(a.status==='idle'&&a.idle>365)flags.push({a,w:1,msg:`Idle for ${fmtDays(a.idle)} and not yet evaluated`});
+    else if(a.status==='evaluated'&&o.length)flags.push({a,w:1,msg:`${o.length} compliance item${o.length>1?'s':''} open before it can be listed`});
+  });
+  flags.sort((x,y)=>y.w-x.w||y.a.idle-x.a.idle);
+  const attn=flags.length?flags.slice(0,6).map(f=>`<button class="item" onclick="openAsset('${f.a.id}','${f.tab||'over'}')"><div>${plate(f.a.id)}</div><div><div class="t">${esc(f.a.name)}</div><div class="m">${esc(f.msg)}</div></div></button>`).join(''):'<div class="empty">Nothing needs attention right now.</div>';
+  const recRows=done.length?done.map(a=>{const red=isRed(a),v=red?(a.closed.avoided||0):a.closed.proceeds,p=a.book?Math.round(v/a.book*100):0;
+    return `<button class="rrow" onclick="openAsset('${a.id}')"><div>${plate(a.id)}<span class="rn">${esc(a.name)}</span></div><div class="bar"><i style="width:${Math.min(p,100)}%"></i></div><div class="rl"><span>${red?'Redeployed to '+esc(a.closed.to||'another site')+', avoided '+money(v):esc(a.closed.outcome)+' for '+money(v)}</span><span>${p}% of ${short(a.book)} book</span></div></button>`}).join(''):'<div class="empty">Closed assets and what they recovered will show up here.</div>';
+  const apd=live.filter(hasAppr), apo=live.filter(a=>a.appr&&a.appr.status!=='delivered'), apn=live.filter(a=>!a.appr);
+  const banner=`<section class="banner"><div><h2>Know what your idle assets are worth</h2><p>${apn.length?`${apn.length} idle asset${apn.length>1?'s have':' has'} no appraisal, covering ${short(sum(apn,'book'))} of book value.`:'Every idle asset has an appraisal or one in progress.'}</p>
+    <div class="kpis"><div><b>${apd.length}</b><span>appraised</span></div><div><b>${apo.length}</b><span>in progress</span></div><div><b>${apn.length}</b><span>not yet appraised</span></div></div></div>
+    <div class="bactions"><button class="btn yel" onclick="apprModal()">Request an appraisal</button><button class="btn ghostl" onclick="go('appraisals')">See all appraisals</button></div></section>`;
+  return head(esc(T().name),'Idle asset overview')+stats+(APPR_ON?banner:'')+`<div class="grid2">
+    <section class="panel"><h2>Idle inventory by age</h2><p class="hint">One square per asset, colored by stage. Select a square to open the asset, or an age band to filter the list.</p>${age}<div class="legend">${legend}</div></section>
+    <div class="stack">
+      <section class="panel"><h2>Needs attention</h2><p class="hint">Redeployment requests, old idle assets, and listings held up by compliance.</p>${attn}</section>
+      <section class="panel"><h2>Recovery vs. book value</h2><p class="hint">What closed assets brought in or saved.</p>${recRows}</section>
+    </div></div>`;
+}
+
+/* Assets list */
+function assetsView(){
+  const f=state.f,t=T();
+  const opt=(v,l,cur)=>`<option value="${esc(v)}"${cur===v?' selected':''}>${esc(l)}</option>`;
+  const chip=f.age>=0?`<button class="chip" onclick="setF('age',-1)">Idle ${BUCKETS[f.age][0].toLowerCase()} ×</button>`:'';
+  return head('Assets',`${assets().length} records for ${esc(t.name)}`)+`
+  <div class="filters">
+    <input type="search" placeholder="Search tag, name, make or model" value="${esc(f.q)}" oninput="setF('q',this.value)" aria-label="Search assets">
+    <select onchange="setF('status',this.value)" aria-label="Filter by stage">${opt('all','All stages',f.status)}${opt('live','Not closed',f.status)}${ORDER.map(s=>opt(s,lbl(s),f.status)).join('')}</select>
+    <select onchange="setF('site',this.value)" aria-label="Filter by site">${opt('all','All sites',f.site)}${t.sites.map(s=>opt(s,s,f.site)).join('')}</select>
+    <select onchange="setF('cat',this.value)" aria-label="Filter by category">${opt('all','All categories',f.cat)}${t.cats.map(s=>opt(s,s,f.cat)).join('')}</select>
+    <select onchange="setF('sort',this.value)" aria-label="Sort">${opt('idle','Longest idle first',f.sort)}${opt('est','Highest recovery first',f.sort)}${opt('book','Highest book value first',f.sort)}${opt('tag','Tag number',f.sort)}</select>
+    ${chip}
+  </div><div class="tablewrap" id="rows">${listHTML()}</div>`;
+}
+function setF(k,v){state.f[k]=v;if(k==='q')$('#rows').innerHTML=listHTML();else renderMain()}
+function listHTML(){
+  const f=state.f,q=f.q.trim().toLowerCase();
+  const S={idle:(a,b)=>b.idle-a.idle,est:(a,b)=>b.est-a.est,book:(a,b)=>b.book-a.book,tag:(a,b)=>a.id.localeCompare(b.id)};
+  const l=assets().filter(a=>
+    (!q||[a.id,a.name,a.make,a.model].join(' ').toLowerCase().includes(q))&&
+    (f.status==='all'||(f.status==='live'?a.status!=='closed':a.status===f.status))&&
+    (f.site==='all'||a.site===f.site)&&(f.cat==='all'||a.cat===f.cat)&&
+    (f.age<0||(a.idle>=BUCKETS[f.age][1]&&a.idle<=BUCKETS[f.age][2]))).sort(S[f.sort]);
+  if(!l.length)return `<div class="empty">No assets match these filters.<br><button class="btn" style="margin-top:12px" onclick="state.f={q:'',status:'all',site:'all',cat:'all',sort:'idle',age:-1};renderMain()">Clear filters</button></div>`;
+  return `<table><thead><tr><th>Tag</th><th>Asset</th><th class="hide-sm">Site</th><th>Stage</th><th class="num">Idle</th><th class="num hide-sm">Book value</th><th class="num">Est. recovery</th></tr></thead><tbody>${
+    l.map(a=>`<tr class="click" tabindex="0" onclick="openAsset('${a.id}')" onkeydown="if(event.key==='Enter')openAsset('${a.id}')">
+      <td>${plate(a.id)}</td><td><strong>${esc(a.name)}</strong><small>${esc(a.make)} ${esc(a.model)}, ${a.year}</small></td>
+      <td class="hide-sm">${esc(a.site)}<br><small>${esc(a.unit)}</small></td><td>${pill(a.status)}</td>
+      <td class="num${a.status!=='closed'&&a.idle>730?' idle-hot':''}">${fmtDays(a.idle)}</td>
+      <td class="num hide-sm">${money(a.book)}</td><td class="num">${a.status==='closed'?cv(a):money(a.est)+(APPR_ON?'<br><small>'+estBasis(a)+'</small>':'')}</td></tr>`).join('')}</tbody></table>`;
+}
+
+/* Pipeline */
+function pipeline(){
+  const cols=ORDER.map(s=>{
+    const l=assets().filter(a=>a.status===s).sort((x,y)=>y.idle-x.idle);
+    let sm='Empty';
+    if(l.length&&s==='closed'){const pr=l.reduce((n,a)=>n+a.closed.proceeds,0),av=l.reduce((n,a)=>n+(a.closed.avoided||0),0);sm=`${short(pr)} recovered`+(av?` · ${short(av)} avoided`:'')}
+    else if(l.length)sm=`${short(sum(l,'est'))} est. recovery`;
+    const val=a=>s==='closed'?(isRed(a)?money(a.closed.avoided||0)+' avoided':money(a.closed.proceeds)):money(a.est);
+    return `<section class="col st-${s}" aria-label="${esc(lbl(s))}"><h3>${esc(lbl(s))}<span>${l.length}</span></h3><p class="sum">${sm}</p>
+      ${l.map(a=>{const pd=pendOf(a).length;return `<button class="kc" onclick="openAsset('${a.id}')">${plate(a.id)}<div class="n">${esc(a.name)}</div><div class="s">${esc(a.site)}${pd?` · ${pd} request${pd>1?'s':''}`:''}</div>
+        <div class="b"><span>${val(a)}</span><span class="muted">${fmtDays(a.idle)}</span></div></button>`}).join('')}</section>`}).join('');
+  return head('Pipeline','Open an asset to move it to the next stage.','')+`<div class="board">${cols}</div>`;
+}
+
+/* Inquiries */
+function inquiries(){
+  const l=[];assets().forEach(a=>a.inq.forEach(q=>l.push({a,q})));l.sort((x,y)=>x.q.d-y.q.d);
+  const open=l.filter(x=>x.q.st!=='Declined'), best=l.reduce((m,x)=>Math.max(m,x.q.amt),0);
+  const rows=l.length?`<table><thead><tr><th>Buyer</th><th>Asset</th><th>Status</th><th class="num">Offer</th><th class="num hide-sm">Received</th></tr></thead><tbody>${
+    l.map(({a,q})=>`<tr class="click" tabindex="0" onclick="openAsset('${a.id}','inq')" onkeydown="if(event.key==='Enter')openAsset('${a.id}','inq')">
+      <td><strong>${esc(q.buyer)}</strong></td><td>${plate(a.id)} <small>${esc(a.name)}</small></td><td><span class="tagt ${q.st}">${q.st}</span></td>
+      <td class="num">${q.amt?money(q.amt):'—'}</td><td class="num hide-sm">${q.d===0?'Today':q.d+' days ago'}</td></tr>`).join('')}</tbody></table>`:'<div class="empty">No buyer inquiries yet. Log one from any asset.</div>';
+  return head('Inquiries',`${open.length} open across ${new Set(open.map(x=>x.a.id)).size} assets${best?` · highest offer ${money(best)}`:''}`,'')+`<div class="tablewrap">${rows}</div>`;
+}
+
+/* ---------- Drawer ---------- */
+function reqCard(a,r,i){
+  const canAct=r.st==='Pending'&&state.role==='corp'&&a.status!=='closed';
+  return `<div class="reqcard"><div class="rh"><span>${esc(r.site)}</span><span class="tagt ${r.st}">${r.st}</span></div>
+    <div class="rm">${esc(r.by)} · ${r.d===0?'today':r.d+' days ago'}</div><div>${esc(r.need)}</div>
+    <div class="rm" style="margin:6px 0 ${canAct?'10px':'0'}">Avoids a ${money(r.avoid)} purchase</div>
+    ${canAct?`<div class="ra"><button class="btn sm primary" onclick="approveModal('${a.id}',${i})">Approve transfer</button><button class="btn sm" onclick="declineReq('${a.id}',${i})">Decline</button></div>`:''}
+    ${r.st==='Pending'&&state.role==='plant'?'<div class="rm" style="margin:8px 0 0">A corporate user needs to approve this.</div>':''}</div>`;
+}
+function renderDrawer(){
+  const el=$('#drawer');
+  if(!state.drawer){el.innerHTML='';return}
+  const a=byId(state.drawer.id), old=$('.drawer'), st=old?old.scrollTop:0, corp=state.role==='corp';
+  const idx=ORDER.indexOf(a.status), tab=state.drawer.tab, t=T(), o=openChecks(a), red=isRed(a);
+  const steps=ORDER.map((s,i)=>`<li class="st-${s} ${i<idx?'done':i===idx?'now':''}">${esc(lbl(s))}</li>`).join('');
+  let act='';
+  if(a.status!=='closed'){
+    const next=ORDER[idx+1];
+    act=`<button class="btn primary" onclick="advance('${a.id}')">${corp?'Move to ':'Request move to '}${esc(lbl(next))}</button>`+(corp&&idx>0?`<button class="btn" onclick="back('${a.id}')">Back to ${esc(lbl(ORDER[idx-1]))}</button>`:'');
+  }
+  const tabs=[['over','Overview'],['val','Valuation'],['red',`Redeployment (${a.req.length})`],['comp',`Compliance (${t.checks.length-o.length}/${t.checks.length})`],['inq',`Inquiries (${a.inq.length})`],['act','Activity']].filter(x=>APPR_ON||x[0]!=='val');
+  let body='';
+  if(tab==='over'){
+    const val=a.status==='closed'?(red?(a.closed.avoided||0):a.closed.proceeds):a.est, rp=a.book?Math.round(val/a.book*100):0, pd=pendOf(a).length;
+    body=(a.status==='closed'?(red?`<div class="note ok"><b>Redeployed to ${esc(a.closed.to||'another site')}</b>, avoiding a ${money(a.closed.avoided||0)} purchase.</div>`:`<div class="note ok"><b>${esc(a.closed.outcome)} for ${money(a.closed.proceeds)}</b>, ${rp}% of book value.</div>`):
+      (a.status==='evaluated'&&o.length?`<div class="note warn">Listing is blocked until ${o.length} compliance item${o.length>1?'s are':' is'} complete. <a href="#" onclick="setTab('comp');return false">Review checklist</a></div>`:'')+
+      (pd?`<div class="note info">${pd} redeployment request${pd>1?'s':''} waiting for approval. <a href="#" onclick="setTab('red');return false">Review</a></div>`:''))+
+      `<dl class="facts">
+        <div><dt>Category</dt><dd>${esc(a.cat)}</dd></div><div><dt>Make and model</dt><dd>${esc(a.make)} ${esc(a.model)}</dd></div>
+        <div><dt>Year built</dt><dd>${a.year}</dd></div><div><dt>Condition on site</dt><dd>${a.installed?'Still installed':'Removed and staged'}</dd></div>
+        <div><dt>Site</dt><dd>${esc(a.site)}</dd></div><div><dt>Unit</dt><dd>${esc(a.unit)}</dd></div>
+        <div><dt>Time idle</dt><dd>${fmtDays(a.idle)}</dd></div><div><dt>Asset owner</dt><dd>${esc(a.owner)}</dd></div>
+        <div><dt>Book value</dt><dd>${money(a.book)}</dd></div><div><dt>${a.status==='closed'?(red?'Purchase avoided':'Recovered'):'Estimated recovery'}</dt><dd>${money(val)} (${rp}%)${a.status!=='closed'&&APPR_ON?`<br><small class="muted">${estBasis(a)==='appraised'?'From appraisal (OLV)':'Client estimate'}</small>`:''}</dd></div>
+        <div><dt>Holding cost per year</dt><dd>${money(a.hold)}</dd></div><div><dt>Holding cost since idle</dt><dd>${money(a.hold*a.idle/365)}</dd></div></dl>
+        ${a.notes?`<div class="note info">${esc(a.notes)}</div>`:''}`;
+  } else if(tab==='val'){
+    const ap=a.appr;
+    if(!ap){
+      body=`<div class="note info">No appraisal yet. The ${money(a.est)} estimated recovery is a client estimate, not an appraisal.</div>
+        <p class="muted" style="margin:0 0 16px">An independent appraisal gives finance, lenders and buyers a number they can rely on: fair market value, orderly liquidation value and forced liquidation value.</p>
+        <button class="btn primary" onclick="apprModal('${a.id}')">Request an appraisal</button>`;
+    } else if(ap.status!=='delivered'){
+      const si=ap.status==='requested'?0:1;
+      body=`<ol class="steps" style="grid-template-columns:repeat(3,1fr);margin:0 0 18px">${['Requested','In progress','Delivered'].map((n,i)=>`<li class="st-evaluated ${i<si?'done':i===si?'now':''}">${n}</li>`).join('')}</ol>
+        <dl class="facts"><div><dt>Purpose</dt><dd>${esc(ap.purpose)}</dd></div><div><dt>Scope</dt><dd>${esc(ap.scope)}</dd></div>
+        <div><dt>Timing</dt><dd>${ap.rush?'Rush':'Standard'}</dd></div><div><dt>Appraiser</dt><dd>${ap.appraiser?esc(ap.appraiser):'Being assigned'}</dd></div>
+        <div><dt>Requested</dt><dd>${ago(ap.d)}</dd></div><div><dt>Expected</dt><dd>${ap.due!=null?'In '+ap.due+' days':'Once assigned'}</dd></div></dl>
+        <div class="note info">Prototype only: this button moves the request forward so you can see a finished report.<br><br><button class="btn sm" onclick="advanceAppr('${a.id}')">Simulate next step</button></div>`;
+    } else {
+      const rows=[['Book value',a.book,'var(--closed)'],['Fair market value, in place',ap.fmv,'var(--evaluated)'],['Orderly liquidation value',ap.olv,'var(--listed)'],['Forced liquidation value',ap.flv,'var(--redeploy)']];
+      const mx=Math.max(...rows.map(r=>r[1]));
+      body=`<div class="note ok"><b>Appraisal delivered</b> ${ago(ap.dd)} by ${esc(ap.appraiser)}.</div>`+
+        rows.map(r=>`<div class="lad"><div class="lh"><span>${r[0]}</span><b>${money(r[1])}</b></div><div class="bar"><i style="width:${(r[1]/mx*100).toFixed(1)}%;background:${r[2]}"></i></div><div class="rm">${a.book?Math.round(r[1]/a.book*100):0}% of book value</div></div>`).join('')+
+        `<dl class="facts" style="margin-top:18px"><div><dt>Purpose</dt><dd>${esc(ap.purpose)}</dd></div><div><dt>Scope</dt><dd>${esc(ap.scope)}</dd></div><div><dt>Standard</dt><dd>USPAP-compliant report</dd></div><div><dt>Report file</dt><dd>${esc(ap.report)}</dd></div></dl>
+        ${a.est===ap.olv?'<div class="note ok">Estimated recovery already uses this appraisal.</div>':''}
+        <div class="rowbtns"><button class="btn sm" onclick="viewReport('${a.id}')">View report</button>${a.est!==ap.olv?`<button class="btn sm primary" onclick="useOLV('${a.id}')">Use orderly liquidation value as estimated recovery</button>`:''}<button class="btn sm" onclick="apprModal('${a.id}')">Request a new appraisal</button></div>`;
+    }
+  } else if(tab==='red'){
+    const canReq=['idle','evaluated','redeploy'].includes(a.status);
+    let top='';
+    if(a.status==='redeploy'&&a.win){const rem=winLeft(a),pct=Math.min(100,Math.round(a.win.elapsed/a.win.days*100));
+      top=`<div class="note info"><b>${rem>0?rem+' days left':'Window ended'}</b> of the ${a.win.days}-day redeployment window. Other sites get first claim before this asset can be listed outside the company.<div class="winbar"><i style="width:${pct}%"></i></div></div>`;
+    } else if(canReq){
+      top=`<div class="note info">Other sites can already request this asset. Moving it to “${esc(lbl('redeploy'))}” opens a 30-day window before it can be listed outside the company.</div>`;
+    } else if(red){
+      top=`<div class="note ok">Redeployed to ${esc(a.closed.to||'another site')}, avoiding a ${money(a.closed.avoided||0)} purchase.</div>`;
+    } else {
+      top=`<div class="note info">This asset has moved past internal redeployment.</div>`;
+    }
+    body=top+(a.req.length?a.req.map((r,i)=>reqCard(a,r,i)).join(''):'<div class="empty">No requests from other sites yet.</div>')+(canReq?`<button class="btn" onclick="requestModal('${a.id}')">Request this asset</button>`:'');
+  } else if(tab==='comp'){
+    body=(o.length?`<div class="note warn">${o.length} of ${t.checks.length} items open. This asset can't be listed until all are complete.</div>`:`<div class="note ok">All items complete. This asset is cleared to list.</div>`)+
+      t.checks.map((c,i)=>`<label class="check"><input type="checkbox" ${a.checks[i]?'checked':''} onchange="toggleCheck('${a.id}',${i})"> ${esc(c)}</label>`).join('');
+  } else if(tab==='inq'){
+    body=(a.inq.length?a.inq.map(q=>`<div class="item" style="cursor:default"><div><div class="t">${esc(q.buyer)}</div><div class="m">${q.d===0?'Today':q.d+' days ago'} · <span class="tagt ${q.st}">${q.st}</span></div></div><div style="margin-left:auto;font-weight:600">${q.amt?money(q.amt):'—'}</div></div>`).join(''):'<div class="empty">No inquiries on this asset yet.</div>')+
+      `<div class="mini"><input id="iq-b" placeholder="Buyer company" aria-label="Buyer company"><input id="iq-a" type="number" min="0" placeholder="Offer, $" aria-label="Offer amount"><button class="btn" onclick="addInquiry('${a.id}')">Log inquiry</button></div><p class="err" id="iq-e"></p>`;
+  } else {
+    body=`<ul class="tl">${a.log.slice().sort((x,y)=>x.d-y.d).map(l=>`<li><b>${esc(l.text)}</b><small>${esc(l.who)} · ${l.d===0?'just now':l.d+' days ago'}</small></li>`).join('')}</ul>`;
+  }
+  el.innerHTML=`<div class="scrim" onclick="closeDrawer()"></div>
+   <aside class="drawer${state.drawer.fresh?' anim':''}" role="dialog" aria-label="${esc(a.id)} details">
+    <div class="dh"><div class="top">${plate(a.id,true)}<button class="x" onclick="closeDrawer()" aria-label="Close">×</button></div>
+      <h2>${esc(a.name)}</h2><p>${esc(a.make)} ${esc(a.model)} · ${esc(a.site)}</p><ol class="steps">${steps}</ol></div>
+    ${act?`<div class="dact">${act}</div>`:''}
+    <div class="tabs" role="tablist">${tabs.map(x=>`<button role="tab" class="${tab===x[0]?'on':''}" onclick="setTab('${x[0]}')">${x[1]}</button>`).join('')}</div>
+    <div class="dbody">${body}</div></aside>`;
+  state.drawer.fresh=false;
+  const nd=$('.drawer');if(nd)nd.scrollTop=st;
+}
+
+/* ---------- Actions ---------- */
+function advance(id){
+  const a=byId(id), i=ORDER.indexOf(a.status), next=ORDER[i+1];
+  if(state.role==='plant'){log(a,`Requested approval to move to ${lbl(next)}`);toast('Approval requested. A corporate approver will see it in the activity log.');render();return}
+  if(next==='listed'){
+    const pd=pendOf(a);
+    if(pd.length){state.drawer.tab='red';render();toast(`Resolve ${pd.length} pending redeployment request${pd.length>1?'s':''} before listing outside the company.`,true);return}
+    const o=openChecks(a);
+    if(o.length){state.drawer.tab='comp';render();toast(`Can't move to ${lbl('listed')} yet: ${o.length} compliance item${o.length>1?'s':''} still open.`,true);return}
+  }
+  if(next==='closed'){closeOutModal(id);return}
+  if(next==='redeploy'){a.win={days:30,elapsed:0};a.status=next;log(a,'Opened 30-day redeployment window');toast(`${a.id} is now visible to other sites for 30 days.`);state.drawer.tab='red';render();return}
+  a.status=next;log(a,`Moved to ${lbl(next)}`);toast(`${a.id} moved to ${lbl(next)}.`);render();
+}
+function back(id){const a=byId(id),p=ORDER[ORDER.indexOf(a.status)-1];a.status=p;if(p==='redeploy'&&!a.win)a.win={days:30,elapsed:30};log(a,`Moved back to ${lbl(p)}`);toast(`${a.id} moved back to ${lbl(p)}.`);render()}
+function toggleCheck(id,i){const a=byId(id);a.checks[i]=!a.checks[i];log(a,`${a.checks[i]?'Completed':'Reopened'}: ${T().checks[i]}`);render()}
+function addInquiry(id){
+  const a=byId(id),b=$('#iq-b').value.trim(),n=parseFloat($('#iq-a').value)||0;
+  if(!b){$('#iq-e').textContent='Enter the buyer company.';return}
+  a.inq.unshift({buyer:b,amt:n,st:n>0?'Offer':'New',d:0});log(a,`Inquiry logged from ${b}${n?' with an offer of '+money(n):''}`);
+  toast('Inquiry logged.');render();
+}
+
+/* ---------- Modals ---------- */
+function openModal(h){$('#modal').innerHTML=`<div class="modalwrap" onclick="if(event.target===this)closeModal()"><div class="modal" role="dialog" aria-modal="true">${h}</div></div>`;const i=$('.modal input,.modal select');if(i)i.focus()}
+function closeModal(){$('#modal').innerHTML=''}
+
+function addModal(){
+  const t=T();
+  openModal(`<h2>Add asset</h2><p>New assets start at “${esc(lbl('idle'))}”.</p>
+   <div class="row2"><label>Asset tag<input id="f-id" placeholder="e.g. P-2045"></label><label>Idle since<input id="f-d" type="date" value="${new Date().toISOString().slice(0,10)}" max="${new Date().toISOString().slice(0,10)}"></label></div>
+   <label>Description<input id="f-n" placeholder="e.g. Centrifugal pump, 150 HP"></label>
+   <div class="row2"><label>Category<select id="f-c">${t.cats.map(c=>`<option>${esc(c)}</option>`).join('')}</select></label><label>Site<select id="f-s">${t.sites.map(c=>`<option>${esc(c)}</option>`).join('')}</select></label></div>
+   <div class="row2"><label>Make<input id="f-m"></label><label>Model<input id="f-mo"></label></div>
+   <div class="row2"><label>Year built<input id="f-y" type="number" min="1900" max="2026" placeholder="2008"></label><label>Unit<input id="f-u" placeholder="e.g. Unit 3"></label></div>
+   <div class="row2"><label>Book value, $<input id="f-b" type="number" min="0"></label><label>Estimated recovery, $<input id="f-e" type="number" min="0"></label></div>
+   <div class="row2"><label>Holding cost per year, $<input id="f-h" type="number" min="0"></label><label>Location<select id="f-i"><option value="1">Still installed</option><option value="0">Removed and staged</option></select></label></div>
+   <p class="err" id="f-err"></p><div class="mfoot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="submitAsset()">Add asset</button></div>`);
+}
+function submitAsset(){
+  const g=i=>$('#'+i).value.trim(), err=m=>$('#f-err').textContent=m;
+  const id=g('f-id').toUpperCase(), name=g('f-n');
+  if(!/^[A-Z0-9-]+$/.test(id))return err('Enter a tag using letters, numbers and hyphens.');
+  if(byId(id))return err('That tag already exists in this workspace.');
+  if(!name)return err('Enter a description.');
+  const days=Math.max(0,Math.round((Date.now()-new Date($('#f-d').value).getTime())/864e5))||0;
+  const a=mk(id,name,g('f-c'),g('f-m')||'—',g('f-mo')||'—',parseInt(g('f-y'))||2000,g('f-s'),g('f-u')||'—',g('f-i')==='1','idle',parseFloat(g('f-b'))||0,parseFloat(g('f-e'))||0,parseFloat(g('f-h'))||0,days,who().replace(/ \(.*/,''),T().checks.map(()=>false));
+  a.log.unshift({d:0,who:who(),text:'Asset record created'});
+  assets().unshift(a);closeModal();state.view='assets';render();toast(`${id} added.`);
+}
+function closeOutModal(id){
+  const a=byId(id);
+  openModal(`<h2>Close out ${esc(a.id)}</h2><p>${esc(a.name)}. Book value ${money(a.book)}.</p>
+   <label>Outcome<select id="c-o"><option>Sold</option><option>Scrapped</option></select></label><p class="muted" style="margin:-4px 0 12px;font-size:13.5px">To redeploy inside the company, approve a request from another site instead.</p>
+   <label>Proceeds, $<input id="c-p" type="number" min="0" value="${a.est}"></label><p class="err" id="c-e"></p>
+   <div class="mfoot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="confirmClose('${a.id}')">Close out</button></div>`);
+}
+function confirmClose(id){
+  const a=byId(id),p=parseFloat($('#c-p').value);
+  if(isNaN(p)||p<0){$('#c-e').textContent='Enter the proceeds as a number, or 0 if none.';return}
+  const o=$('#c-o').value;a.status='closed';a.closed={outcome:o,proceeds:p};log(a,`Closed: ${o} for ${money(p)}`);
+  closeModal();render();toast(`${a.id} closed out. ${o} for ${money(p)}.`);
+}
+function importModal(){
+  openModal(`<h2>Import from CSV or Excel</h2><p>Upload a file and match its columns to Crucible fields. This is how a new client's existing register comes in.</p>
+   <div class="tablewrap"><table class="map"><thead><tr><th>Column in your file</th><th>Crucible field</th></tr></thead><tbody>
+   <tr><td>Equip No</td><td>Asset tag</td></tr><tr><td>Description</td><td>Description</td></tr><tr><td>NBV</td><td>Book value</td></tr><tr><td>Plant</td><td>Site</td></tr><tr><td>Idle Date</td><td>Idle since</td></tr></tbody></table></div>
+   <p style="margin:12px 0 0" class="muted">Preview: 3 rows found. Duplicate tags are skipped.</p>
+   <div class="mfoot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="doImport()">Import 3 assets</button></div>`);
+}
+function doImport(){
+  const t=T();let n=0;
+  t.imports.forEach(r=>{if(byId(r[0]))return;const a=mk(r[0],r[1],t.cats[r[2]],'—','—',2005,t.sites[r[3]],'—',true,'idle',r[4],r[5],Math.round(r[4]*.05),r[6],who().replace(/ \(.*/,''),t.checks.map(()=>false));
+    a.log.unshift({d:0,who:who(),text:'Imported from CSV'});t.assets.unshift(a);n++});
+  closeModal();state.view='assets';render();toast(n?`${n} assets imported.`:'These rows were already imported.');
+}
+
+/* ---------- Appraisals ---------- */
+const PURPOSES=['Impairment testing','Insurance','Tax','Lending','Sale preparation','Facility closure'];
+const APPRAISERS=['Gulf States Appraisal Group','Meridian Industrial Valuation','Piedmont Machinery Appraisers'];
+function appraisalsView(){
+  const A=assets(), live=A.filter(a=>a.status!=='closed');
+  const del=A.filter(hasAppr).sort((x,y)=>y.book-x.book);
+  const open=A.filter(a=>a.appr&&a.appr.status!=='delivered');
+  const none=live.filter(a=>!a.appr).sort((x,y)=>y.book-x.book);
+  const olvPct=del.length?Math.round(sum(del.map(a=>a.appr),'olv')/sum(del,'book')*100):null;
+  const banner=`<section class="banner"><div><h2>Independent appraisals, inside Crucible</h2>
+    <p>Written reports for impairment testing, insurance, tax, lending and sale preparation. Fees are quoted up front and never depend on the value reached or on whether an asset sells.</p></div>
+    <div class="bactions"><button class="btn yel" onclick="apprModal()">Request an appraisal</button></div></section>`;
+  const stats=`<section class="stats s4" aria-label="Appraisal summary">
+    <div class="stat"><span>Appraisals delivered</span><b>${del.length}</b><small>${short(sum(del,'book'))} of book value covered</small></div>
+    <div class="stat"><span>In progress</span><b>${open.length}</b><small>requested or being prepared</small></div>
+    <div class="stat"><span>Not yet appraised</span><b>${none.length}</b><small>${short(sum(none,'book'))} of book value</small></div>
+    <div class="stat"><span>Liquidation value vs. book</span><b>${olvPct===null?'—':olvPct+'%'}</b><small>orderly liquidation, appraised assets</small></div></section>`;
+  const chart=del.length?del.map(a=>{const ap=a.appr,mx=Math.max(a.book,ap.fmv,ap.olv,ap.flv),pos=v=>(4+v/mx*92).toFixed(1);
+    return `<button class="dprow" onclick="openAsset('${a.id}','val')"><div>${plate(a.id)}<div class="dn">${esc(a.name)}</div></div>
+      <div class="dp" aria-hidden="true"><i style="left:${pos(a.book)}%;background:var(--closed)"></i><i style="left:${pos(ap.fmv)}%;background:var(--evaluated)"></i><i style="left:${pos(ap.olv)}%;background:var(--listed)"></i><i style="left:${pos(ap.flv)}%;background:var(--redeploy)"></i></div>
+      <div class="dv">${money(ap.olv)} orderly<small>${Math.round(ap.olv/a.book*100)}% of book · forced ${short(ap.flv)}</small></div></button>`}).join(''):'<div class="empty">Delivered appraisals will be compared with book value here.</div>';
+  const legend=`<div class="dleg"><span><i style="background:var(--closed)"></i>Book value</span><span><i style="background:var(--evaluated)"></i>Fair market value, in place</span><span><i style="background:var(--listed)"></i>Orderly liquidation</span><span><i style="background:var(--redeploy)"></i>Forced liquidation</span></div>`;
+  const defs=`<details class="defs"><summary>What do these values mean?</summary><dl>
+    <dt>Book value</dt><dd>What the asset is carried at on the balance sheet. It reflects depreciation, not the market.</dd>
+    <dt>Fair market value, in place</dt><dd>Value of the asset installed and operating where it is.</dd>
+    <dt>Orderly liquidation value</dt><dd>What it should bring if sold with a reasonable marketing period, usually a few months.</dd>
+    <dt>Forced liquidation value</dt><dd>What it should bring in a quick sale, such as an auction with short notice.</dd></dl></details>`;
+  const order={requested:0,inprogress:1,delivered:2};
+  const all=A.filter(a=>a.appr).sort((x,y)=>order[x.appr.status]-order[y.appr.status]||y.book-x.book);
+  const table=all.length?`<table><thead><tr><th>Asset</th><th class="hide-sm">Purpose</th><th class="hide-sm">Appraiser</th><th>Status</th><th>Timing</th></tr></thead><tbody>${
+    all.map(a=>{const ap=a.appr,tm=ap.status==='delivered'?'Delivered '+ago(ap.dd):ap.status==='inprogress'?'Due in '+ap.due+' days':'Requested '+ago(ap.d);
+      return `<tr class="click" tabindex="0" onclick="openAsset('${a.id}','val')" onkeydown="if(event.key==='Enter')openAsset('${a.id}','val')"><td>${plate(a.id)}<br><small>${esc(a.name)}</small></td><td class="hide-sm">${esc(ap.purpose)}</td><td class="hide-sm">${ap.appraiser?esc(ap.appraiser):'Being assigned'}</td>
+      <td><span class="tagt ap-${ap.status}">${{requested:'Requested',inprogress:'In progress',delivered:'Delivered'}[ap.status]}</span></td><td>${tm}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">No appraisals requested yet.</div>';
+  const noneTable=none.length?`<table><thead><tr><th>Asset</th><th class="hide-sm">Site</th><th class="num">Book value</th><th class="num">Client estimate</th><th></th></tr></thead><tbody>${
+    none.map(a=>`<tr class="click" tabindex="0" onclick="openAsset('${a.id}','val')" onkeydown="if(event.key==='Enter')openAsset('${a.id}','val')"><td>${plate(a.id)}<br><small>${esc(a.name)}</small></td><td class="hide-sm">${esc(a.site)}</td><td class="num">${money(a.book)}</td><td class="num">${money(a.est)}</td>
+      <td class="num"><button class="btn sm" onclick="event.stopPropagation();apprModal('${a.id}')">Request</button></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Every idle asset has an appraisal or one in progress.</div>';
+  return head('Appraisals',`Independent valuations for ${esc(T().name)}`,'')+banner+stats+
+    `<section class="panel" style="margin-bottom:20px"><h2>Appraised value vs. book value</h2><p class="hint">Each dot is a different value for the same asset. The wider the spread, the more the balance sheet and the market disagree.</p>${legend}${chart}${defs}</section>
+     <section class="sec"><h2>All appraisals</h2><div class="tablewrap">${table}</div></section>
+     <section class="sec"><h2>Not yet appraised</h2><p>These estimates come from your own team. An appraisal makes them defensible.</p><div class="tablewrap">${noneTable}</div></section>
+     <div class="note info">Appraisers work independently of any sales channel. Appraiser names in this prototype are fictional.</div>`;
+}
+function apprModal(id){
+  const live=assets().filter(a=>a.status!=='closed');
+  if(!live.length){toast('There are no assets to appraise.',true);return}
+  const pick=id&&byId(id)?id:(live.find(a=>!a.appr)||live[0]).id;
+  openModal(`<h2>Request an appraisal</h2><p>An independent appraiser prepares a written report with fair market value, orderly liquidation value and forced liquidation value.</p>
+   <label>Asset<select id="ap-a">${live.map(a=>`<option value="${a.id}"${a.id===pick?' selected':''}>${esc(a.id)} · ${esc(a.name)}</option>`).join('')}</select></label>
+   <label>What is it for?<select id="ap-p">${PURPOSES.map(x=>`<option>${x}</option>`).join('')}</select></label>
+   <div class="row2"><label>Scope<select id="ap-s"><option>Desktop review</option><option>Field inspection</option></select></label>
+   <label>Timing<select id="ap-t"><option value="0">Standard, about 3 weeks</option><option value="1">Rush, about 1 week</option></select></label></div>
+   <div class="note info">You'll review a fixed-fee quote before any work starts. The fee never depends on the value reached or on a sale.</div>
+   <p class="err" id="ap-e"></p><div class="mfoot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="submitAppr()">Request appraisal</button></div>`);
+}
+function submitAppr(){
+  const a=byId($('#ap-a').value);
+  if(a.appr&&a.appr.status!=='delivered'){$('#ap-e').textContent='An appraisal is already in progress for this asset.';return}
+  a.appr={status:'requested',purpose:$('#ap-p').value,scope:$('#ap-s').value,rush:$('#ap-t').value==='1',appraiser:null,d:0};
+  log(a,`Appraisal requested: ${a.appr.purpose}, ${a.appr.scope.toLowerCase()}${a.appr.rush?', rush':''}`);
+  closeModal();if(state.drawer&&state.drawer.id===a.id)state.drawer.tab='val';render();toast(`Appraisal requested for ${a.id}.`);
+}
+function advanceAppr(id){
+  const a=byId(id),ap=a.appr;
+  if(ap.status==='requested'){ap.status='inprogress';ap.appraiser=APPRAISERS[a.id.charCodeAt(0)%APPRAISERS.length];ap.due=ap.rush?7:21;log(a,`Appraiser assigned: ${ap.appraiser}`);toast(`${ap.appraiser} is preparing the report.`)}
+  else if(ap.status==='inprogress'){
+    ap.status='delivered';ap.dd=0;ap.olv=Math.round(a.est*0.92/1000)*1000;ap.fmv=Math.round(a.est*1.28/1000)*1000;ap.flv=Math.round(a.est*0.64/1000)*1000;ap.report=`${a.id}_appraisal.pdf`;
+    log(a,`Appraisal delivered by ${ap.appraiser}`);toast(`Appraisal delivered for ${a.id}.`)}
+  render();
+}
+function useOLV(id){const a=byId(id);a.est=a.appr.olv;log(a,`Estimated recovery set to appraised orderly liquidation value, ${money(a.est)}`);render();toast(`Estimated recovery updated to ${money(a.est)}.`)}
+function viewReport(id){toast('Prototype only: the appraisal report would open here.')}
+
+/* ---------- Redeployment ---------- */
+function redeployView(){
+  const A=assets(), live=A.filter(a=>a.status!=='closed');
+  const all=[];A.forEach(a=>a.req.forEach((r,i)=>all.push({a,r,i})));
+  const rank={Pending:0,Approved:1,Declined:2};
+  all.sort((x,y)=>rank[x.r.st]-rank[y.r.st]||x.r.d-y.r.d);
+  const pend=all.filter(x=>x.r.st==='Pending'&&x.a.status!=='closed');
+  const avail=live.filter(a=>['idle','evaluated','redeploy'].includes(a.status)).sort((x,y)=>(y.status==='redeploy')-(x.status==='redeploy')||y.idle-x.idle);
+  const reqTable=all.length?`<table><thead><tr><th>Asset</th><th>Requested by</th><th class="hide-sm">Need</th><th class="num">Purchase avoided</th><th>Status</th></tr></thead><tbody>${
+    all.map(({a,r})=>`<tr class="click" tabindex="0" onclick="openAsset('${a.id}','red')" onkeydown="if(event.key==='Enter')openAsset('${a.id}','red')">
+      <td>${plate(a.id)}<br><small>${esc(a.name)}</small></td><td><strong>${esc(r.site)}</strong><small>${esc(r.by)}, ${r.d===0?'today':r.d+' days ago'}</small></td>
+      <td class="hide-sm">${esc(r.need)}</td><td class="num">${money(r.avoid)}</td><td><span class="tagt ${r.st}">${r.st}</span></td></tr>`).join('')}</tbody></table>`:'<div class="empty">No requests yet. Plants can request any idle asset from its page or from the list below.</div>';
+  const availTable=avail.length?`<table><thead><tr><th>Asset</th><th class="hide-sm">Site</th><th>Stage</th><th class="num">Window</th><th class="num hide-sm">Est. value</th><th></th></tr></thead><tbody>${
+    avail.map(a=>{const w=winLeft(a);return `<tr class="click" tabindex="0" onclick="openAsset('${a.id}','red')" onkeydown="if(event.key==='Enter')openAsset('${a.id}','red')">
+      <td>${plate(a.id)}<br><small>${esc(a.name)}</small></td><td class="hide-sm">${esc(a.site)}<br><small>${esc(a.unit)}</small></td><td>${pill(a.status)}</td>
+      <td class="num">${a.status==='redeploy'&&w!==null?(w>0?w+' days left':'Ended'):'—'}</td><td class="num hide-sm">${money(a.est)}</td>
+      <td class="num"><button class="btn sm" onclick="event.stopPropagation();requestModal('${a.id}')">Request</button></td></tr>`}).join('')}</tbody></table>`:'<div class="empty">No idle assets are available to request.</div>';
+  return head('Redeployment',`${pend.length} pending request${pend.length===1?'':'s'}${pend.length?` · ${short(sum(pend.map(x=>x.r),'avoid'))} in purchases at stake`:''}`,'')+
+    `<section class="sec"><h2>Requests</h2><p>Sites asking to use another site's idle asset instead of buying new.</p><div class="tablewrap">${reqTable}</div></section>
+     <section class="sec"><h2>Available across sites</h2><p>Idle assets any plant can request before they're sold outside the company.</p><div class="tablewrap">${availTable}</div></section>`;
+}
+function requestModal(id){
+  const a=byId(id), sites=T().sites.filter(s=>s!==a.site);
+  openModal(`<h2>Request ${esc(a.id)}</h2><p>${esc(a.name)} at ${esc(a.site)}.</p>
+   <label>Requesting site<select id="r-s">${sites.map(s=>`<option>${esc(s)}</option>`).join('')}</select></label>
+   <label>What will it be used for?<input id="r-n" placeholder="e.g. Spare for Unit 4 feed service"></label>
+   <label>New purchase it would replace, $<input id="r-a" type="number" min="0" placeholder="e.g. 40000"></label>
+   <p class="err" id="r-e"></p><div class="mfoot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="submitRequest('${a.id}')">Send request</button></div>`);
+}
+function submitRequest(id){
+  const a=byId(id), need=$('#r-n').value.trim(), av=parseFloat($('#r-a').value);
+  if(!need)return $('#r-e').textContent='Describe what the asset will be used for.';
+  if(isNaN(av)||av<0)return $('#r-e').textContent='Enter the cost of the new purchase this would replace.';
+  const site=$('#r-s').value;
+  a.req.unshift({site,by:who().replace(/ \(.*/,''),need,avoid:av,st:'Pending',d:0});
+  log(a,`Redeployment requested by ${site}, avoiding a ${money(av)} purchase`);
+  closeModal();if(state.drawer&&state.drawer.id===id)state.drawer.tab='red';render();toast(`Request sent for ${a.id}.`);
+}
+function approveModal(id,i){
+  const a=byId(id), r=a.req[i];
+  openModal(`<h2>Approve transfer</h2><p>Move ${esc(a.id)}, ${esc(a.name)}, from ${esc(a.site)} to ${esc(r.site)}.</p>
+   <div class="note ok">This avoids a ${money(r.avoid)} new purchase. Any other pending requests for this asset will be declined.</div>
+   <div class="mfoot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn primary" onclick="approveReq('${a.id}',${i})">Approve transfer</button></div>`);
+}
+function approveReq(id,i){
+  const a=byId(id), r=a.req[i];
+  r.st='Approved';a.req.forEach((x,k)=>{if(k!==i&&x.st==='Pending')x.st='Declined'});
+  a.status='closed';a.closed={outcome:'Redeployed',proceeds:0,avoided:r.avoid,to:r.site};
+  log(a,`Approved transfer to ${r.site}, avoiding a ${money(r.avoid)} purchase`);
+  closeModal();render();toast(`${a.id} redeployed to ${r.site}. ${money(r.avoid)} purchase avoided.`);
+}
+function declineReq(id,i){
+  const a=byId(id), r=a.req[i];r.st='Declined';log(a,`Declined redeployment request from ${r.site}`);render();toast('Request declined.');
+}
+
+function render(){renderSide();renderMain();renderDrawer()}
+render();
+</script>
+</body>
+</html>
